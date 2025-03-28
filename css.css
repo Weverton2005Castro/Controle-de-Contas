@@ -1,0 +1,66 @@
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  background-color: #f9f9f9; /* Adicione uma cor de fundo leve */
+}
+.resume {
+  display: flex;
+  padding: 20px 0; /* Aumente o padding para criar mais espaço */
+  gap: 40px;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+  background-color: #fff; /* Adicione uma cor de fundo branca */
+  border-radius: 10px; /* Adicione um efeito de borda arredondada */
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Adicione uma sombra leve */
+}
+
+.resume > div {
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0px 0px 5px #ccc;
+  border-radius: 10px;
+  padding: 20px; /* Aumente o padding para criar mais espaço */
+  width: 150px;
+  background-color: #fff; /* Adicione uma cor de fundo branca */
+}
+.newItem {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 20px; /* Adicione padding para criar mais espaço */
+  background-color: #fff; /* Adicione uma cor de fundo branca */
+  border-radius: 10px; /* Adicione um efeito de borda arredondada */
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Adicione uma sombra leve */
+}
+
+.newItem > button {
+  background-color: #2C73D2; /* Mantenha a cor de fundo do botão */
+  color: white;
+  border: none;
+  padding: 10px 20px; /* Aumente o padding para criar mais espaço */
+  border-radius: 5px;
+  cursor: pointer;
+  height: 40px; /* Aumente a altura do botão */
+}
+table {
+  width: 98%;
+  padding: 20px 0;
+  border-radius: 5px;
+  border-collapse: collapse; /* Adicione essa propriedade para melhorar a aparência da tabela */
+}
+
+th {
+  text-align: start;
+  border-bottom: 2px solid #ccc; /* Aumente a grossura da borda inferior */
+  padding-bottom: 10px; /* Aumente o padding para criar mais espaço */
+}
+
+td {
+  padding: 10px; /* Adicione padding para criar mais espaço */
+  border-bottom: 1px solid #ccc; /* Adicione uma borda inferior */
+}
