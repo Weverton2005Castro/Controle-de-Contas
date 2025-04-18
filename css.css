@@ -1,91 +1,167 @@
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
   height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(to right, #dbe9f4, #f4f9fc);
   display: flex;
   justify-content: center;
-  background-color: #f9f9f9;
-  background-image: url(./Imgs/Fundo.jpg);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  align-items: flex-start;
+  padding: 40px 20px;
 }
 
-.resume {
-  display: flex;
-  padding: 20px 0;
-  /* Aumente o padding para criar mais espaço */
-  gap: 40px;
+/* Container principal */
+main {
   width: 100%;
-  justify-content: center;
-  flex-wrap: wrap;
-  background-color: #fff;
-  /* Adicione uma cor de fundo branca */
-  border-radius: 10px;
-  /* Adicione um efeito de borda arredondada */
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  /* Adicione uma sombra leve */
-}
-
-.resume>div {
+  max-width: 1000px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0px 0px 5px #ccc;
-  border-radius: 10px;
-  padding: 20px;
-  /* Aumente o padding para criar mais espaço */
-  width: 150px;
-  background-color: #fff;
-  /* Adicione uma cor de fundo branca */
+  gap: 30px;
 }
 
-.newItem {
+/* Cartões de resumo */
+.resume {
   display: flex;
-  gap: 10px;
-  align-items: end;
-  width: 100%;
-  justify-content: center;
+  justify-content: space-around;
+  gap: 20px;
   flex-wrap: wrap;
   padding: 20px;
-  /* Adicione padding para criar mais espaço */
-  background-color: #fff;
-  /* Adicione uma cor de fundo branca */
-  border-radius: 10px;
-  /* Adicione um efeito de borda arredondada */
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  /* Adicione uma sombra leve */
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
 }
 
-.newItem>button {
+.resume > div {
+  background-color: #f5f9ff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 200px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.resume span {
+  display: block;
+  margin-top: 8px;
+  font-size: 24px;
+  color: #2C73D2;
+}
+
+/* Formulário de novo item */
+.newItem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+  align-items: flex-end;
+}
+
+.newItem > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.newItem label {
+  font-weight: bold;
+  color: #333;
+}
+
+.newItem input,
+.newItem select {
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 200px;
+  font-size: 16px;
+  background-color: #f9f9f9;
+}
+
+/* Botão incluir */
+.newItem button {
   background-color: #2C73D2;
-  /* Mantenha a cor de fundo do botão */
   color: white;
   border: none;
-  padding: 10px 20px;
-  /* Aumente o padding para criar mais espaço */
-  border-radius: 5px;
+  padding: 10px 25px;
+  border-radius: 8px;
   cursor: pointer;
-  height: 40px;
-  /* Aumente a altura do botão */
+  transition: 0.3s;
+  font-size: 16px;
+}
+
+.newItem button:hover {
+  background-color: #1a5cb8;
+}
+
+/* Tabela de lançamentos */
+.divTable {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
 }
 
 table {
-  width: 98%;
-  padding: 20px 0;
-  border-radius: 5px;
+  width: 100%;
   border-collapse: collapse;
-  /* Adicione essa propriedade para melhorar a aparência da tabela */
+}
+
+th, td {
+  text-align: left;
+  padding: 12px 10px;
 }
 
 th {
-  text-align: start;
-  border-bottom: 2px solid #ccc;
-  /* Aumente a grossura da borda inferior */
-  padding-bottom: 10px;
-  /* Aumente o padding para criar mais espaço */
+  background-color: #f2f2f2;
+  border-bottom: 2px solid #ddd;
+  color: #444;
+  font-weight: 600;
 }
 
 td {
-  padding: 10px;
-  /* Adicione padding para criar mais espaço */
-  border-bottom: 1px solid #ccc;
-  /* Adicione uma borda inferior */
+  border-bottom: 1px solid #eee;
+}
+
+.columnAction {
+  text-align: center;
+}
+
+.columnAction i {
+  cursor: pointer;
+  font-size: 20px;
+  color: #e74c3c;
+  transition: 0.3s;
+}
+
+.columnAction i:hover {
+  color: #c0392b;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .resume {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .newItem input,
+  .newItem select {
+    width: 100%;
+  }
+
+  .newItem {
+    justify-content: center;
+  }
 }
