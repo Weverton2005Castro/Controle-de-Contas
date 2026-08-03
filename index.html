@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contas</title>
+  <title>Controle Financeiro</title>
 
   <link href='https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css' rel='stylesheet'>
 
@@ -12,52 +12,65 @@
 </head>
 <body>
   <main>
-    <div class="resume"  >
-      <div>
-        entradas: R$
-        <span class="incomes">0.00</span>
+    <div class="resume">
+      <div class="card income">
+        <div class="card-icon">
+          <i class='bx bx-trending-up'></i>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Entradas</span>
+          <span class="incomes">R$ 0,00</span>
+        </div>
       </div>
-      <div>
-        Saídas: R$
-        <span class="expenses">0.00</span>
+      <div class="card expense">
+        <div class="card-icon">
+          <i class='bx bx-trending-down'></i>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Saídas</span>
+          <span class="expenses">R$ 0,00</span>
+        </div>
       </div>
-      <div>
-        Total: R$
-        <span class="total">0.00</span>
+      <div class="card total">
+        <div class="card-icon">
+          <i class='bx bx-wallet'></i>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Saldo Total</span>
+          <span class="total">R$ 0,00</span>
+        </div>
       </div>
     </div>
+
     <div class="newItem">
-      <div class="divDesc">
+      <h2>Nova Transação</h2>
+      <div class="form-group">
         <label for="desc">Descrição</label>
-        <input type="text" id="desc" />
+        <input type="text" id="desc" placeholder="Ex: Salário, Aluguel..." />
       </div>
-      <div class="divAmount">
+      <div class="form-group">
         <label for="amount">Valor</label>
-        <input type="number" id="amount" />
+        <input type="number" id="amount" placeholder="0,00" step="0.01" />
       </div>
-      <div class="divType">
+      <div class="form-group">
         <label for="type">Tipo</label>
         <select id="type">
-          <option>Entrada</option>
-          <option>Saída</option>
+          <option value="Entrada">Entrada</option>
+          <option value="Saída">Saída</option>
         </select>
       </div>
-      <button id="btnNew">Incluir</button>
+      <button id="btnNew">
+        <i class='bx bx-plus'></i>
+        Adicionar
+      </button>
     </div>
-    <div class="divTable">
-      <table>
-        <thead>
-          <tr>
-            <th>Descrição</th>
-            <th class="columnAmount">Valor</th>
-            <th class="columnType">Tipo</th>
-            <th class="columnAction"></th>
-          </tr>
-        </thead>
-        <tbody>
-        </tbody>
-      </table>
-  </main>  
+
+    <div class="transactions">
+      <h2>Transações</h2>
+      <div id="transactionsList" class="transactions-list">
+      </div>
+    </div>
+  </main>
 
   <script src="js.js"></script>
 </body>
