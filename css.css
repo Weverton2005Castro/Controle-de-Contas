@@ -6,7 +6,7 @@
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #edf2f7 0%, #dfe7ef 100%);
   display: flex;
@@ -33,7 +33,7 @@ main {
 
 .card {
   background-color: #ffffff;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 20px;
   display: flex;
   align-items: center;
@@ -49,7 +49,7 @@ main {
 .card-icon {
   width: 50px;
   height: 50px;
-  border-radius: 12px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,6 +72,7 @@ main {
 }
 
 .card-info {
+  min-width: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -88,6 +89,7 @@ main {
   font-size: 24px;
   font-weight: 700;
   color: #1e293b;
+  overflow-wrap: anywhere;
 }
 
 .card.income .card-info span:last-child {
@@ -105,7 +107,7 @@ main {
 /* Formulário de novo item */
 .newItem {
   background-color: #ffffff;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 25px;
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
@@ -134,7 +136,7 @@ main {
 .newItem select {
   padding: 14px 16px;
   border: 2px solid #d7dee8;
-  border-radius: 12px;
+  border-radius: 8px;
   width: 100%;
   font-size: 16px;
   background-color: #f8fafc;
@@ -160,7 +162,7 @@ main {
   color: white;
   border: none;
   padding: 14px 24px;
-  border-radius: 12px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 16px;
@@ -186,7 +188,7 @@ main {
 /* Lista de transações */
 .transactions {
   background-color: #ffffff;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 25px;
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
@@ -206,7 +208,7 @@ main {
 
 .transaction-card {
   background-color: #f8fafc;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 16px;
   display: flex;
   align-items: center;
@@ -241,6 +243,7 @@ main {
 }
 
 .transaction-info {
+  min-width: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -251,6 +254,7 @@ main {
   font-size: 16px;
   font-weight: 600;
   color: #1e293b;
+  overflow-wrap: anywhere;
 }
 
 .transaction-amount {
@@ -287,6 +291,8 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .transaction-actions button:hover {
@@ -294,8 +300,9 @@ main {
   transform: scale(1.08);
 }
 
-.transaction-actions button i {
-  font-size: 20px;
+.transaction-actions button span {
+  font-size: 18px;
+  line-height: 1;
 }
 
 .empty-state {
@@ -304,7 +311,8 @@ main {
   color: #64748b;
 }
 
-.empty-state i {
+.empty-state .empty-icon {
+  display: block;
   font-size: 48px;
   margin-bottom: 12px;
   color: #cbd5e1;
@@ -315,6 +323,26 @@ main {
 }
 
 /* Responsivo */
+@media (max-width: 480px) {
+  body {
+    padding: 12px;
+  }
+
+  main {
+    gap: 14px;
+  }
+
+  .card,
+  .newItem,
+  .transactions {
+    padding: 16px;
+  }
+
+  .transaction-card {
+    align-items: flex-start;
+  }
+}
+
 @media (min-width: 769px) {
   .resume {
     flex-direction: row;
