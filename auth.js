@@ -141,6 +141,7 @@ async function loginBiometrico() {
   if (!cloud?.currentUser() || authenticationBusy) return;
   authenticationBusy = true;
   biometricButton.disabled = true;
+  let stage = "webauthn";
   try {
     const savedIds = profile.credentialIds || [];
     if (!savedIds.length) {
@@ -158,10 +159,19 @@ async function loginBiometrico() {
       }))
     };
     const cred = await navigator.credentials.get({ publicKey });
-    if (cred) await mostrarFormulario();
+    if (cred) {
+      stage = "application";
+      await mostrarFormulario();
+    }
   } catch (err) {
-    console.error("Erro na autenticação biométrica:", err);
-    alert("Falha na autenticação biométrica ou no carregamento do Firebase.");
+    console.error(`Erro na etapa ${stage}:`, err);
+    const message = stage === "webauthn"
+      ? (err.name === "NotAllowedError"
+        ? "A autenticação foi cancelada, expirou ou a credencial não está disponível neste dispositivo. Tente novamente."
+        : `Não foi possível autenticar no dispositivo: ${err.message || err.name}`)
+      : `A biometria foi confirmada, mas não foi possível abrir o painel. ${err.code ? mensagemErroFirebase(err) : (err.message || "Tente novamente.")}`;
+    loginStatus.textContent = message;
+    alert(message);
   } finally {
     authenticationBusy = false;
     biometricButton.disabled = false;

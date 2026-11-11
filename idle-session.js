@@ -2,8 +2,8 @@
 
 // Apenas o desbloqueio desta aba; dados financeiros continuam no Firestore.
 class IdleSession {
-  constructor({ storage, now = () => Date.now(), schedule = setTimeout,
-    cancel = clearTimeout, onExpire, timeout = 5 * 60 * 1000 }) {
+  constructor({ storage, now = () => Date.now(), schedule = (callback, delay) => setTimeout(callback, delay),
+    cancel = timer => clearTimeout(timer), onExpire, timeout = 5 * 60 * 1000 }) {
     this.storage = storage;
     this.now = now;
     this.schedule = schedule;

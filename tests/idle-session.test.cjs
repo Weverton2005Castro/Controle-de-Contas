@@ -39,3 +39,21 @@ test('armazenamento indisponível ou adulterado não abre sessão', () => {
   const session = new IdleSession({ storage: undefined, now: () => 1000, schedule: () => 1, cancel() {}, onExpire() {} });
   session.unlock('a'); assert.equal(session.check(), true); assert.equal(session.restore('a'), false);
 });
+test('temporizadores padrão não recebem IdleSession como receptor', () => {
+  const browser = vm.createContext({
+    setTimeout: function () {
+      if (this && typeof this.arm === 'function') throw new TypeError('Illegal invocation');
+      return 1;
+    },
+    clearTimeout: function () {
+      if (this && typeof this.arm === 'function') throw new TypeError('Illegal invocation');
+    }
+  });
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../idle-session.js'), 'utf8'), browser);
+  assert.doesNotThrow(() => vm.runInContext(`
+    const session = new IdleSession({ storage: undefined, onExpire() {} });
+    session.unlock('user');
+    session.activity();
+    session.clear();
+  `, browser));
+});
