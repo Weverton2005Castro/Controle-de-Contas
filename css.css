@@ -725,3 +725,13 @@ body.login-pending {
 .welcome-panel { grid-column: 1 / -1; padding: 16px 20px; background: var(--primary-soft); border-radius: var(--radius); }
 .welcome-panel h2 { font-size: 16px; font-weight: 500; }
 .topbar-actions { flex-wrap: wrap; }
+
+/* Perfil sempre na extremidade superior direita do cabeçalho interno. */
+.topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: start; }
+.topbar > .profile-control { justify-self: end; }
+.topbar-actions { justify-content: flex-end; }
+@media (max-width: 520px) {
+  .topbar { grid-template-columns: minmax(0, 1fr) auto; }
+  .topbar > .profile-control { grid-column: 2; grid-row: 1; }
+  .topbar-actions { grid-column: 1 / -1; grid-row: 2; }
+}
