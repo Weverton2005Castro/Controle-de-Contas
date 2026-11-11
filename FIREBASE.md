@@ -33,3 +33,9 @@ Dados antigos do navegador não são enviados nem apagados automaticamente. Um b
 Testes locais com serviços simulados verificam entrada, parâmetros WebAuthn, falhas, bytes Base64 e dependência do carregamento remoto. Também é verificada a ausência de localStorage nos scripts do aplicativo. As regras, login Google, acesso real ao Firestore e hardware WebAuthn ainda precisam de validação no projeto/dispositivo de destino; não foram testados contra produção nem emulador.
 
 Referências: https://firebase.google.com/docs/auth/web/auth-state-persistence e https://firebase.google.com/docs/firestore/security/get-started
+
+## Configuração confirmada pelo responsável
+
+Em 11/11/2026, o responsável confirmou a conclusão da ativação do Google, autorização dos domínios, criação do Firestore e publicação das regras. Não é necessário repetir essas etapas, salvo se a interface indicar erro de configuração.
+
+Para validar: abra via localhost ou HTTPS, entre com Google, conclua o WebAuthn e adicione uma transação de teste. Confira o documento em `users/{uid}/transactions` no console Firestore. Recarregue, entre com a mesma conta e confirme que a transação reaparece; teste editar e excluir. Esta validação depende da conta e do autenticador do responsável e não foi executada pelo agente. A interface distingue erros de popup, domínio, provedor desabilitado, conexão e regras.

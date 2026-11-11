@@ -25,10 +25,25 @@ window.firebaseService.then(service => {
   console.error("Erro ao carregar Firebase:", error);
   loginStatus.textContent = "Não foi possível carregar o Firebase. Verifique a conexão e recarregue a página.";
 });
+function mensagemErroFirebase(error) {
+  const messages = {
+    "auth/popup-blocked": "O navegador bloqueou a janela do Google. Permita popups para este site e tente novamente.",
+    "auth/popup-closed-by-user": "A janela do Google foi fechada. Clique em Entrar com Google para tentar novamente.",
+    "auth/unauthorized-domain": "Adicione o endereço atual aos domínios autorizados do Firebase Authentication.",
+    "auth/operation-not-allowed": "O login Google não está habilitado neste projeto Firebase.",
+    "auth/network-request-failed": "Não foi possível conectar ao Google. Verifique sua conexão.",
+    "permission-denied": "O Firestore negou o acesso. Confira as regras publicadas no projeto contas-d8193.",
+    "unavailable": "O Firestore está indisponível. Verifique sua conexão e tente novamente."
+  };
+  return messages[error.code] || "Não foi possível acessar o Firebase. Tente novamente e confira o console do navegador se o erro continuar.";
+}
+
 googleButton.addEventListener("click", async () => {
   googleButton.disabled = true;
+  loginStatus.textContent = "Conectando à sua conta Google…";
   try {
     await cloud.signIn();
+    loginStatus.textContent = "Consultando seu perfil no Firebase…";
     profile = await cloud.getProfile();
     googleButton.classList.add("hidden");
     biometricButton.classList.remove("hidden");
@@ -37,7 +52,7 @@ googleButton.addEventListener("click", async () => {
       : "Conta conectada. Cadastre o desbloqueio do dispositivo para continuar.";
   } catch (error) {
     console.error("Erro ao conectar conta:", error);
-    loginStatus.textContent = "Falha ao conectar. Verifique o login Google, os domínios autorizados e as regras do Firestore.";
+    loginStatus.textContent = mensagemErroFirebase(error);
   } finally { googleButton.disabled = false; }
 });
 

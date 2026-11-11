@@ -90,3 +90,14 @@ test('scripts do aplicativo não usam persistência local', () => {
     assert.doesNotMatch(fs.readFileSync(path.join(root, file), 'utf8'), /localStorage|sessionStorage|persistentLocalCache/);
   }
 });
+
+test('erros de configuração e popup recebem orientação específica', async () => {
+  const s = await setup();
+  for (const [code, text] of [
+    ['auth/popup-blocked', 'Permita popups'],
+    ['auth/unauthorized-domain', 'domínios autorizados'],
+    ['permission-denied', 'regras publicadas'],
+    ['auth/operation-not-allowed', 'não está habilitado']
+  ]) assert.ok(s.context.mensagemErroFirebase({ code }).includes(text));
+  assert.ok(s.context.mensagemErroFirebase({ code: 'unknown' }).includes('console'));
+});
