@@ -9,8 +9,12 @@
   <title>FinanConta — Controle Financeiro</title>
   <link rel="stylesheet" href="css.css">
 </head>
-<body>
-  <div class="app">
+<body class="login-pending">
+  <section id="loginScreen" aria-labelledby="loginTitle">
+    <h2 id="loginTitle">Login com Biometria</h2>
+    <button type="button" id="btnBiometria">Entrar com Biometria</button>
+  </section>
+  <div id="mainContent" class="app hidden">
 
     <!-- ===== Cabeçalho ===== -->
     <header class="topbar">
@@ -176,5 +180,6 @@
   </div>
 
   <script src="js.js"></script>
+  <script src="auth.js"></script>
 </body>
 </html>

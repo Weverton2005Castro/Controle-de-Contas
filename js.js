@@ -553,8 +553,14 @@ function loadItems() {
   renderChart();
 }
 
-initTheme();
-setType("income");
-dateInput.value = new Date().toISOString().slice(0, 10);
-items = getItemsBD();
-loadItems();
+// Executada apenas após retorno não nulo do WebAuthn.
+let applicationInitialized = false;
+function inicializarAplicacao() {
+  if (applicationInitialized) return;
+  initTheme();
+  setType("income");
+  dateInput.value = new Date().toISOString().slice(0, 10);
+  items = getItemsBD();
+  loadItems();
+  applicationInitialized = true;
+}

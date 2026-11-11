@@ -667,3 +667,36 @@ input, select { font-family: inherit; font-size: 16px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Entrada: estilos isolados do painel financeiro. */
+body.login-pending {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  color: #000;
+  margin: 0;
+  padding: 20px;
+  line-height: normal;
+}
+#loginScreen {
+  box-sizing: content-box;
+  max-width: 400px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+#loginScreen h2 { text-align: center; margin: .83em 0; font-size: 1.5em; }
+#loginScreen button {
+  width: 100%;
+  padding: 6px 10px;
+  margin-top: 10px;
+  margin-right: 5px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  background-color: #007bff;
+  color: white;
+}
+#loginScreen button:hover { background-color: #0056b3; }
