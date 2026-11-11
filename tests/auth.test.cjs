@@ -19,7 +19,8 @@ async function setup(ids = [], result = {}, support = true, loadError = false, r
   }
   const profile = { credentialIds: [...ids] };
   const context = vm.createContext({ Uint8Array, btoa, atob, TextEncoder,
-    window: { PublicKeyCredential: support ? function() {} : undefined },
+    setTimeout: () => 1, clearTimeout() {},
+    window: { addEventListener() {}, PublicKeyCredential: support ? function() {} : undefined },
     mockCloud: {
       async signIn() { calls.push({ method: 'signIn' }); return { uid: 'account-123', email: 'user@example.com' }; },
       async restoreSession() { return restoredUser; }, watchSession() {},
@@ -34,6 +35,7 @@ async function setup(ids = [], result = {}, support = true, loadError = false, r
     inicializarAplicacao: async () => { if (loadError) throw Error('Firestore denied'); initialized = true; },
     document: { addEventListener() {}, querySelectorAll: () => [], getElementById: id => elements[id], body: { classList: { remove() {} } } }
   });
+  vm.runInContext(fs.readFileSync(path.join(root, "idle-session.js"), "utf8"), context);
   vm.runInContext(source, context);
   await new Promise(resolve => setImmediate(resolve));
   return { context, profile, calls, alerts, initialized: () => initialized, elements,
@@ -91,7 +93,7 @@ test('Base64 preserva todos os bytes', async () => {
 });
 test('scripts do aplicativo não usam persistência local', () => {
   for (const file of ['auth.js', 'firebase.js', 'js.js']) {
-    assert.doesNotMatch(fs.readFileSync(path.join(root, file), 'utf8'), /localStorage|sessionStorage|persistentLocalCache/);
+    assert.doesNotMatch(fs.readFileSync(path.join(root, file), 'utf8'), /localStorage|persistentLocalCache/);
   }
 });
 

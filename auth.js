@@ -55,17 +55,47 @@ async function prepareAccount(user) {
     : "Cadastre o desbloqueio do dispositivo para continuar.";
   biometricButton.disabled = false;
 }
+let sessionStorageAdapter;
+try { sessionStorageAdapter = window.sessionStorage; } catch {}
+const unlockSession = new IdleSession({
+  storage: sessionStorageAdapter,
+  onExpire: () => {
+    document.getElementById("mainContent").classList.add("hidden");
+    document.getElementById("profileMenu").close();
+    document.getElementById("loginScreen").classList.remove("hidden");
+    document.body.classList.add("login-pending");
+    // Descarta dados e formulários em memória e exige novo WebAuthn.
+    window.location.reload();
+  }
+});
+for (const eventName of ["pointerdown", "pointermove", "keydown", "touchstart", "scroll", "wheel"]) {
+  document.addEventListener(eventName, event => {
+    if (event.isTrusted && !document.hidden) unlockSession.activity();
+  }, { passive: true, capture: true });
+}
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) unlockSession.check();
+});
+window.addEventListener("focus", () => unlockSession.check());
+window.addEventListener("pageshow", () => unlockSession.check());
+
 window.firebaseService = import("./firebase.js");
 window.firebaseService.then(async service => {
   cloud = service;
   const user = await cloud.restoreSession();
   googleButton.textContent = "Entrar com Google";
-  if (user) await prepareAccount(user);
+  if (user) {
+    await prepareAccount(user);
+    if (unlockSession.restore(user.uid)) await mostrarFormulario(true);
+  } else {
+    unlockSession.clear();
+  }
   googleButton.disabled = false;
   let observedUid = user?.uid || null;
   cloud.watchSession(current => {
     const nextUid = current?.uid || null;
     if (observedUid && observedUid !== nextUid && !leavingAccount) {
+      unlockSession.clear();
       document.getElementById("mainContent").classList.add("hidden");
       window.location.reload();
     }
@@ -165,8 +195,14 @@ async function registrarBiometria() {
   }
 }
 
-async function mostrarFormulario() {
+async function mostrarFormulario(restoring = false) {
   await inicializarAplicacao(profile);
+  // Carregar os dados não conta como atividade e não renova o prazo salvo.
+  if (restoring) {
+    if (!unlockSession.check()) return;
+  } else {
+    unlockSession.unlock(cloud.currentUser().uid);
+  }
   document.getElementById("loginScreen").classList.add("hidden");
   document.getElementById("mainContent").classList.remove("hidden");
   document.body.classList.remove("login-pending");
@@ -210,6 +246,7 @@ document.querySelectorAll("[data-account-action]").forEach(button => {
     if (leavingAccount || authenticationBusy || (typeof saving !== "undefined" && saving)) return;
     leavingAccount = true;
     try {
+      unlockSession.clear();
       closeProfileMenu();
       // Oculta imediatamente os dados, antes de encerrar a sessão.
       document.getElementById("mainContent").classList.add("hidden");

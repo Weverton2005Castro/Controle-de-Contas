@@ -1,9 +1,9 @@
 # Entrada atual
 
-No primeiro acesso, entre com Google e conclua o WebAuthn. A sessão Google fica salva pelo Firebase Auth no IndexedDB. Nos próximos acessos, a conta é restaurada e o painel continua oculto até o desbloqueio WebAuthn.
+No primeiro acesso, entre com Google e conclua o WebAuthn. A sessão Google fica salva pelo Firebase Auth no IndexedDB. O painel permanece desbloqueado na mesma aba durante uso ativo e após recarga, desde que não decorram cinco minutos sem atividade.
 
-A foto do perfil abre as opções Alterar senha da conta Google, Trocar de conta e Sair. As ações de saída removem a sessão Firebase e descartam o estado em memória; trocar requer selecionar a outra conta no próximo clique em Entrar com Google. As opções ficam exclusivamente no modal de perfil dentro do painel autenticado.
+O prazo fica no sessionStorage da aba (somente UID e horário). Recarregar não renova o prazo; interação do usuário na página visível renova. Ao expirar, o painel volta a exigir WebAuthn e a conta Google continua lembrada. Sair/Trocar de conta encerram a sessão Firebase e removem o desbloqueio.
 
-Consulte `FIREBASE.md` para os detalhes e limites. WebAuthn continua sendo um bloqueio local, não um segundo fator validado pelo servidor. O método pode usar PIN; não há garantia de digital exclusiva.
+A foto do cabeçalho, no canto superior direito, abre um modal interno com foto, nome, e-mail, alteração da senha Google, troca de conta e saída. Essas opções não aparecem na entrada.
 
-As ações de conta aparecem somente dentro do sistema: clique na foto do cabeçalho para abrir o modal com foto, nome e e-mail. Ele fecha pelo botão ×, Escape ou clique no fundo. Não há opções de sair ou trocar de conta na tela de entrada.
+Consulte `FIREBASE.md` para detalhes. O bloqueio WebAuthn e seu prazo são locais, não um segundo fator validado pelo servidor; o dispositivo pode usar PIN em vez de digital.

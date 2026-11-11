@@ -51,3 +51,13 @@ A foto abre opções de conta; na ausência ou falha da imagem, exibe a inicial 
 As boas-vindas são escolhidas aleatoriamente a cada carregamento e personalizadas com o primeiro nome no painel. Nenhuma atualização das regras Firestore é necessária para estas mudanças.
 
 As ações de conta aparecem somente dentro do sistema: clique na foto do cabeçalho para abrir o modal com foto, nome e e-mail. Ele fecha pelo botão ×, Escape ou clique no fundo. Não há opções de sair ou trocar de conta na tela de entrada.
+
+## Desbloqueio com prazo de inatividade
+
+O painel agora mantém o desbloqueio ao recarregar a mesma aba por até cinco minutos desde a última atividade. Cliques, movimento do ponteiro, teclado, toque e rolagem enquanto a página está visível renovam o prazo. A recarga, sozinha, não renova o prazo. Ao retornar à aba ou recuperar foco, o prazo é verificado novamente para cobrir suspensão de timers.
+
+Somente UID e horário da última atividade ficam no sessionStorage da aba; transações e preferências continuam no Firestore. Este estado temporário permite restaurar o desbloqueio após reload e não é prova criptográfica de autenticação. O bloqueio permanece local, sem transformar WebAuthn em um segundo fator validado pelo servidor. Se o navegador negar armazenamento, a página funciona, mas não restaura o desbloqueio ao recarregar.
+
+Após cinco minutos sem atividade, o painel é ocultado e a página recarrega descartando os dados em memória; o próximo acesso exige biometria. A sessão Google fica lembrada. Sair/Trocar de conta removem também o marcador e encerram Firebase Auth. Cada aba controla seu próprio prazo; não há sincronização da atividade entre abas. Nenhuma alteração das regras Firebase é necessária.
+
+Os testes de `tests/idle-session.test.cjs` usam relógio simulado para verificar restauração sem extensão de prazo, atividade, expiração, suspensão, conta diferente e falhas de armazenamento. O fluxo nativo no dispositivo ainda precisa ser conferido.
