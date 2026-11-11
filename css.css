@@ -735,3 +735,37 @@ body.login-pending {
   .topbar > .profile-control { grid-column: 2; grid-row: 1; }
   .topbar-actions { grid-column: 1 / -1; grid-row: 2; }
 }
+
+/* Conteúdo variável não deve impor largura mínima à tela. */
+.app > *, .brand, .brand > div, .month-label, .card, .card-label,
+.transactions-tools, .profile-card { min-width: 0; }
+.brand-sub, .welcome-panel, .month-label strong, .card-label,
+#loginScreen, .profile-card a, .profile-card button, .modal-card {
+  overflow-wrap: anywhere;
+}
+.month-label { flex: 1; padding-inline: 8px; }
+.modal-card { flex-shrink: 0; min-width: 0; }
+.profile-card { grid-template-columns: minmax(0, 1fr); }
+.profile-card button, .profile-card a { min-height: 44px; }
+#loginScreen button { min-height: 44px; margin-right: 0; }
+.card-info > span { display: block; }
+@media (max-width: 639px) {
+  .card.income, .card.expense { flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px; }
+  .card-info { width: 100%; }
+  .brand { gap: 8px; }
+  .brand-logo { width: 40px; height: 40px; }
+  .brand h1 { font-size: 18px; }
+  .search-box input { font-size: 16px; }
+}
+@media (max-width: 380px) {
+  .transactions-tools { grid-template-columns: minmax(0, 1fr); }
+  .transactions-tools > .btn { width: 100%; }
+  .modal-card { padding: 20px; }
+  .modal-actions > .btn { flex: 1 1 100%; }
+  .form-actions > .btn { flex: 1 1 100%; }
+  .profile-card { padding: 32px 16px 20px; }
+}
+@media (pointer: coarse) {
+  .profile-card .profile-close { min-width: 44px; min-height: 44px; }
+  .type-btn { min-height: 44px; }
+}
