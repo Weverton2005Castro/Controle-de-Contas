@@ -2,70 +2,91 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
-const source = fs.readFileSync(require('node:path').join(__dirname, '../auth.js'), 'utf8');
-function setup(savedId, result, support = true) {
-  const data = new Map(savedId ? [['credentialId', savedId]] : []);
+const path = require('node:path');
+const root = path.join(__dirname, '..');
+const source = fs.readFileSync(path.join(root, 'auth.js'), 'utf8')
+  .replace('import("./firebase.js")', 'Promise.resolve(mockCloud)');
+async function setup(ids = [], result = {}, support = true, loadError = false) {
   const calls = [], alerts = [];
-  let initialized = 0;
-  const elements = Object.fromEntries(['loginScreen', 'mainContent', 'btnBiometria'].map(id => [id, {
-    classList: new Set(id === 'mainContent' ? ['hidden'] : []), addEventListener() {}
+  let initialized = false;
+  const elements = Object.fromEntries(['loginScreen', 'mainContent', 'btnBiometria', 'btnGoogle', 'loginStatus'].map(id => [id, {
+    classList: new Set(['mainContent', 'btnBiometria'].includes(id) ? ['hidden'] : []),
+    listeners: {}, addEventListener(type, fn) { this.listeners[type] = fn; }
   }]));
   for (const el of Object.values(elements)) el.classList.remove = el.classList.delete;
-  const context = vm.createContext({ Uint8Array, btoa, atob,
+  const profile = { credentialIds: [...ids] };
+  const context = vm.createContext({ Uint8Array, btoa, atob, TextEncoder,
     window: { PublicKeyCredential: support ? function() {} : undefined },
+    mockCloud: {
+      async signIn() { calls.push({ method: 'signIn' }); },
+      currentUser: () => ({ uid: 'account-123', email: 'user@example.com' }),
+      async getProfile() { return profile; },
+      async saveCredential(id) { calls.push({ method: 'saveCredential' }); profile.credentialIds.push(id); }
+    },
     navigator: { credentials: Object.fromEntries(['create', 'get'].map(method => [method, async options => {
       calls.push({ method, options }); if (result instanceof Error) throw result; return result;
     }])) },
-    localStorage: { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) },
     alert: msg => alerts.push(msg), console: { error() {} },
-    inicializarAplicacao: () => initialized++,
+    inicializarAplicacao: async () => { if (loadError) throw Error('Firestore denied'); initialized = true; },
     document: { getElementById: id => elements[id], body: { classList: { remove() {} } } }
   });
   vm.runInContext(source, context);
-  return { context, data, calls, alerts, unlocked: () => initialized > 0, elements };
+  await Promise.resolve();
+  return { context, profile, calls, alerts, initialized: () => initialized, elements,
+    signIn: () => elements.btnGoogle.listeners.click(),
+    unlocked: () => !elements.mainContent.classList.has('hidden') };
 }
-test('entrada permanece bloqueada com e sem ID, sem solicitar credenciais', () => {
-  for (const id of [null, 'AP+A']) {
-    const s = setup(id, null);
-    assert.equal(s.calls.length, 0); assert.equal(s.unlocked(), false);
-    assert.ok(s.elements.mainContent.classList.has('hidden'));
+test('abertura com/sem ID não consulta autenticador nem libera conteúdo', async () => {
+  for (const ids of [[], ['AP+A']]) {
+    const s = await setup(ids); assert.equal(s.calls.length, 0); assert.equal(s.unlocked(), false);
+    await s.signIn(); assert.equal(s.unlocked(), false);
+    assert.equal(s.elements.btnBiometria.classList.has('hidden'), false);
   }
 });
-test('cadastro salva bytes e libera sem autenticação extra', async () => {
-  const s = setup(null, { rawId: Uint8Array.from([0, 255, 128]).buffer });
-  await s.context.loginBiometrico();
-  assert.equal(s.data.get('credentialId'), 'AP+A'); assert.ok(s.unlocked());
-  assert.equal(s.calls.length, 1); assert.equal(s.calls[0].method, 'create');
-  const p = s.calls[0].options.publicKey;
+test('cadastro usa conta, salva ID no banco e libera após carregamento remoto', async () => {
+  const s = await setup([], { rawId: Uint8Array.from([0, 255, 128]).buffer });
+  await s.signIn(); await s.context.loginBiometrico();
+  assert.equal(s.profile.credentialIds[0], 'AP+A'); assert.ok(s.unlocked()); assert.ok(s.initialized());
+  const p = s.calls.find(c => c.method === 'create').options.publicKey;
   assert.equal(Buffer.from(p.challenge).toString(), 'desafioRegistro123');
+  assert.equal(Buffer.from(p.user.id).toString(), 'account-123');
   assert.equal(p.rp.name, 'FinanConta'); assert.equal(p.rp.id, undefined);
-  assert.equal(Buffer.from(p.user.id).toString(), 'usuario123');
   assert.equal(p.pubKeyCredParams[0].alg, -7); assert.equal(p.attestation, 'direct');
   assert.equal(p.timeout, 60000); assert.equal(p.authenticatorSelection, undefined);
+  assert.equal(s.calls.some(c => c.method === 'get'), false);
 });
-test('login usa ID e parâmetros da referência', async () => {
-  const s = setup('AP+A', {}); await s.context.loginBiometrico();
-  assert.ok(s.unlocked()); assert.equal(s.calls[0].method, 'get');
-  const p = s.calls[0].options.publicKey;
+test('login busca credencial do perfil com parâmetros preservados', async () => {
+  const s = await setup(['AP+A']); await s.signIn(); await s.context.loginBiometrico();
+  assert.ok(s.unlocked());
+  const p = s.calls.find(c => c.method === 'get').options.publicKey;
   assert.equal(Buffer.from(p.challenge).toString(), 'desafioLogin123');
   assert.deepEqual([...p.allowCredentials[0].id], [0, 255, 128]);
   assert.equal(p.allowCredentials[0].transports[0], 'internal');
   assert.equal(p.userVerification, 'preferred'); assert.equal(p.timeout, 60000);
   assert.equal(p.rpId, undefined);
 });
-test('nulo, falha, cancelamento e timeout mantêm bloqueio e ID', async () => {
-  for (const id of [null, 'AP+A']) for (const result of [null, new Error('failure'), new DOMException('cancel', 'NotAllowedError'), new DOMException('timeout', 'TimeoutError')]) {
-    const s = setup(id, result); await s.context.loginBiometrico();
-    assert.equal(s.unlocked(), false); assert.equal(s.data.get('credentialId'), id || undefined);
+test('nulo, falha, cancelamento e timeout não liberam nem apagam perfil', async () => {
+  for (const ids of [[], ['AP+A']]) for (const result of [null, new Error('failure'), new DOMException('cancel', 'NotAllowedError'), new DOMException('timeout', 'TimeoutError')]) {
+    const s = await setup(ids, result); await s.signIn(); await s.context.loginBiometrico();
+    assert.equal(s.unlocked(), false); assert.deepEqual(s.profile.credentialIds, ids);
     assert.equal(s.alerts.length, result ? 1 : 0);
   }
 });
-test('sem suporte exibe mensagem esperada', async () => {
-  const s = setup(null, null, false); await s.context.loginBiometrico();
-  assert.deepEqual(s.alerts, ['Seu navegador não suporta autenticação biométrica.']);
-  assert.equal(s.calls.length, 0);
+test('falha no carregamento remoto impede abertura', async () => {
+  const s = await setup(['AP+A'], {}, true, true); await s.signIn(); await s.context.loginBiometrico();
+  assert.equal(s.unlocked(), false); assert.equal(s.alerts.length, 1);
 });
-test('Base64 preserva todos os bytes', () => {
-  const s = setup(); const bytes = Uint8Array.from({ length: 256 }, (_, i) => i);
+test('sem suporte exibe mensagem esperada', async () => {
+  const s = await setup([], null, false); await s.signIn(); await s.context.loginBiometrico();
+  assert.deepEqual(s.alerts, ['Seu navegador não suporta autenticação biométrica.']);
+  assert.equal(s.calls.some(c => ['get', 'create'].includes(c.method)), false);
+});
+test('Base64 preserva todos os bytes', async () => {
+  const s = await setup(); const bytes = Uint8Array.from({ length: 256 }, (_, i) => i);
   assert.deepEqual([...s.context.base64ToBuffer(s.context.bufferToBase64(bytes.buffer))], [...bytes]);
+});
+test('scripts do aplicativo não usam persistência local', () => {
+  for (const file of ['auth.js', 'firebase.js', 'js.js']) {
+    assert.doesNotMatch(fs.readFileSync(path.join(root, file), 'utf8'), /localStorage|sessionStorage|persistentLocalCache/);
+  }
 });

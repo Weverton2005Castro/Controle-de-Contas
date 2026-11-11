@@ -11,8 +11,11 @@
 </head>
 <body class="login-pending">
   <section id="loginScreen" aria-labelledby="loginTitle">
-    <h2 id="loginTitle">Login com Biometria</h2>
-    <button type="button" id="btnBiometria">Entrar com Biometria</button>
+    <h2 id="loginTitle">Entrar no FinanConta</h2>
+    <p>Entre com sua conta Google para acessar seus dados no Firebase.</p>
+    <button type="button" id="btnGoogle" disabled>Carregando Firebase…</button>
+    <button type="button" id="btnBiometria" class="hidden">Entrar com Biometria</button>
+    <p id="loginStatus" role="status" aria-live="polite"></p>
   </section>
   <div id="mainContent" class="app hidden">
 
@@ -160,7 +163,7 @@
     </section>
 
     <footer class="footer">
-      <p>Dados armazenados localmente no seu dispositivo.</p>
+      <p>Dados armazenados na sua conta no Firebase.</p>
     </footer>
   </div>
 
@@ -181,5 +184,6 @@
 
   <script src="js.js"></script>
   <script src="auth.js"></script>
+
 </body>
 </html>

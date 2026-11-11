@@ -1,6 +1,6 @@
 /* ============================================================
    FinanConta — Controle Financeiro
-   Persistência: localStorage | Tema: light/dark
+   Persistência: Cloud Firestore | Tema: light/dark
    ============================================================ */
 
 "use strict";
@@ -28,8 +28,7 @@ const CATEGORIES = {
   ],
 };
 
-const DB_KEY = "financonta_items_v1";
-const THEME_KEY = "financonta_theme";
+
 
 /* ---------- Estado ---------- */
 let items = [];
@@ -126,51 +125,42 @@ amountInput.addEventListener("input", () => {
   amountInput.value = formatted;
 });
 
-/* ---------- Tema ---------- */
+/* ---------- Tema e persistência remota ---------- */
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
-  try { localStorage.setItem(THEME_KEY, theme); } catch {}
 }
-function initTheme() {
-  const saved = localStorage.getItem(THEME_KEY);
+function initTheme(profile) {
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  applyTheme(saved || (prefersDark ? "dark" : "light"));
+  applyTheme(profile.theme || (prefersDark ? "dark" : "light"));
 }
-$("#btnTheme").addEventListener("click", () => {
+let cloudStore;
+let saving = false;
+async function cloudOperation(action, successMessage) {
+  if (saving || !applicationInitialized) return false;
+  saving = true;
+  document.getElementById("mainContent").inert = true;
+  toast("Salvando no Firebase…");
+  try {
+    await action();
+    loadItems();
+    toast(successMessage);
+    return true;
+  } catch (error) {
+    console.error("Operação no Firebase falhou:", error);
+    toast(error.message || "Não foi possível salvar no Firebase. Tente novamente.");
+    return false;
+  } finally {
+    saving = false;
+    document.getElementById("mainContent").inert = false;
+  }
+}
+$("#btnTheme").addEventListener("click", async () => {
   const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
-  applyTheme(next);
+  await cloudOperation(async () => {
+    await cloudStore.saveTheme(next);
+    applyTheme(next);
+  }, "Tema salvo no Firebase.");
 });
-
-/* ---------- Persistência ---------- */
-let memoryItems = [];
-const getItemsBD = () => {
-  try {
-    const saved = JSON.parse(localStorage.getItem(DB_KEY)) ?? [];
-    if (Array.isArray(saved)) return saved;
-  } catch {}
-  // Migração do formato antigo
-  try {
-    const legacy = JSON.parse(localStorage.getItem("db_items")) ?? [];
-    if (Array.isArray(legacy) && legacy.length) {
-      const migrated = legacy.map((t) => ({
-        id: uid(),
-        desc: t.desc || "Transação",
-        amount: Math.abs(Number(t.amount) || 0),
-        type: t.type === "Saída" ? "expense" : "income",
-        category: "Outros",
-        date: t.date || new Date().toISOString(),
-      })).filter((t) => t.amount > 0);
-      localStorage.setItem(DB_KEY, JSON.stringify(migrated));
-      localStorage.removeItem("db_items");
-      return migrated;
-    }
-  } catch {}
-  return memoryItems;
-};
-const setItemsBD = () => {
-  try { localStorage.setItem(DB_KEY, JSON.stringify(items)); }
-  catch { memoryItems = [...items]; }
-};
 
 /* ---------- Toast ---------- */
 let toastTimer;
@@ -241,7 +231,7 @@ function resetForm() {
 
 btnCancelEdit.addEventListener("click", resetForm);
 
-btnNew.addEventListener("click", () => {
+btnNew.addEventListener("click", async () => {
   const desc = descItem.value.trim();
   const parsed = parseAmount(amountInput.value);
 
@@ -257,18 +247,12 @@ btnNew.addEventListener("click", () => {
     date: new Date(dateVal + "T12:00:00").toISOString(),
   };
 
-  if (editingId) {
-    const idx = items.findIndex((t) => t.id === editingId);
-    if (idx !== -1) items[idx] = { ...items[idx], ...payload };
-    toast("Transação atualizada!");
-  } else {
-    items.unshift({ id: uid(), ...payload });
-    toast("Transação adicionada!");
-  }
-
-  setItemsBD();
-  loadItems();
-  resetForm();
+  const item = { id: editingId || uid(), ...payload };
+  const saved = await cloudOperation(async () => {
+    await cloudStore.saveTransaction(item);
+    items = [item, ...items.filter(t => t.id !== item.id)];
+  }, editingId ? "Transação atualizada!" : "Transação adicionada!");
+  if (saved) resetForm();
 });
 
 // Enter no formulário salva
@@ -283,12 +267,12 @@ function deleteItem(id) {
   confirmDialog(
     "Excluir transação",
     `Deseja realmente excluir "${item.desc}" (${formatCurrency(item.amount)})?`,
-    () => {
-      items = items.filter((t) => t.id !== id);
-      setItemsBD();
-      loadItems();
-      toast("Transação excluída.");
-      if (editingId === id) resetForm();
+    async () => {
+      const saved = await cloudOperation(async () => {
+        await cloudStore.removeTransaction(id);
+        items = items.filter(t => t.id !== id);
+      }, "Transação excluída.");
+      if (saved && editingId === id) resetForm();
     }
   );
 }
@@ -500,25 +484,25 @@ $("#fileImport").addEventListener("change", (e) => {
       const data = JSON.parse(reader.result);
       if (!Array.isArray(data)) throw new Error("Formato inválido");
       const valid = data.filter((t) =>
-        t && typeof t.desc === "string" && Number(t.amount) > 0 &&
-        ["income", "expense"].includes(t.type) && t.date
+        t && typeof t.desc === "string" && Number.isFinite(Number(t.amount)) && Number(t.amount) > 0 &&
+        ["income", "expense"].includes(t.type) && typeof t.date === "string" && Number.isFinite(Date.parse(t.date))
       ).map((t) => ({
-        id: t.id || uid(),
+        id: uid(),
         desc: t.desc,
         amount: Math.abs(Number(t.amount)),
         type: t.type,
-        category: t.category || "Outros",
+        category: typeof t.category === "string" ? t.category : "Outros",
         date: t.date,
       }));
       if (!valid.length) return toast("Nenhuma transação válida encontrada no arquivo.");
       confirmDialog(
         "Importar dados",
         `Encontradas ${valid.length} transações. Deseja adicionar aos dados atuais?`,
-        () => {
-          items = [...valid, ...items];
-          setItemsBD();
-          loadItems();
-          toast(`${valid.length} transações importadas!`);
+        async () => {
+          await cloudOperation(async () => {
+            await cloudStore.importTransactions(valid);
+            items = [...valid, ...items];
+          }, `${valid.length} transações importadas!`);
         }
       );
     } catch {
@@ -535,12 +519,12 @@ $("#btnClear").addEventListener("click", () => {
   confirmDialog(
     "Apagar tudo",
     `Tem certeza? Todas as ${items.length} transações serão excluídas permanentemente.`,
-    () => {
-      items = [];
-      setItemsBD();
-      loadItems();
-      resetForm();
-      toast("Todos os dados foram apagados.");
+    async () => {
+      const saved = await cloudOperation(async () => {
+        await cloudStore.clearTransactions(items.map(t => t.id));
+        items = [];
+      }, "Todos os dados foram apagados.");
+      if (saved) resetForm();
     }
   );
 });
@@ -553,14 +537,16 @@ function loadItems() {
   renderChart();
 }
 
-// Executada apenas após retorno não nulo do WebAuthn.
+// Executada após a conta Firebase e a entrada WebAuthn.
 let applicationInitialized = false;
-function inicializarAplicacao() {
+async function inicializarAplicacao(profile) {
   if (applicationInitialized) return;
-  initTheme();
+  cloudStore = await window.firebaseService;
+  const remoteItems = await cloudStore.listTransactions();
+  initTheme(profile);
   setType("income");
   dateInput.value = new Date().toISOString().slice(0, 10);
-  items = getItemsBD();
+  items = remoteItems;
   loadItems();
   applicationInitialized = true;
 }
