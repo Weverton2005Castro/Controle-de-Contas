@@ -33,14 +33,18 @@ async function prepareAccount(user) {
   profile = await cloud.getProfile();
   googleButton.classList.add("hidden");
   biometricButton.classList.remove("hidden");
-  document.getElementById("lockedAccountActions").classList.remove("hidden");
   document.getElementById("accountIdentity").textContent = user.email || "Conta conectada";
   document.getElementById("profileName").textContent = user.displayName || "Minha conta";
   document.getElementById("profileEmail").textContent = user.email || "";
   document.getElementById("profileInitial").textContent = (user.displayName || user.email || "?").charAt(0).toUpperCase();
+  document.getElementById("modalProfileInitial").textContent = document.getElementById("profileInitial").textContent;
+  const modalPhoto = document.getElementById("modalProfilePhoto");
   const photo = document.getElementById("profilePhoto");
   if (user.photoURL) {
     photo.src = user.photoURL;
+    modalPhoto.src = user.photoURL;
+    modalPhoto.classList.remove("hidden");
+    document.getElementById("modalProfileInitial").classList.add("hidden");
     photo.classList.remove("hidden");
     document.getElementById("profileInitial").classList.add("hidden");
   }
@@ -173,19 +177,28 @@ document.getElementById("btnBiometria").addEventListener("click", loginBiometric
 const profileButton = document.getElementById("btnProfile");
 const profileMenu = document.getElementById("profileMenu");
 function closeProfileMenu() {
-  profileMenu.classList.add("hidden");
+  profileMenu.close();
   profileButton.setAttribute("aria-expanded", "false");
 }
 profileButton.addEventListener("click", () => {
-  const opening = profileMenu.classList.contains("hidden");
-  profileMenu.classList.toggle("hidden", !opening);
-  profileButton.setAttribute("aria-expanded", String(opening));
+  if (document.getElementById("mainContent").classList.contains("hidden")) return;
+  profileMenu.showModal();
+  profileButton.setAttribute("aria-expanded", "true");
 });
-document.addEventListener("click", event => {
-  if (!event.target.closest(".profile-control")) closeProfileMenu();
+document.getElementById("btnCloseProfile").addEventListener("click", closeProfileMenu);
+profileMenu.addEventListener("click", event => {
+  if (event.target === profileMenu) {
+    const bounds = profileMenu.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeProfileMenu();
+  }
 });
-document.addEventListener("keydown", event => {
-  if (event.key === "Escape") { closeProfileMenu(); profileButton.focus(); }
+profileMenu.addEventListener("close", () => {
+  profileButton.setAttribute("aria-expanded", "false");
+  profileButton.focus();
+});
+document.getElementById("modalProfilePhoto").addEventListener("error", () => {
+  document.getElementById("modalProfilePhoto").classList.add("hidden");
+  document.getElementById("modalProfileInitial").classList.remove("hidden");
 });
 document.getElementById("profilePhoto").addEventListener("error", () => {
   document.getElementById("profilePhoto").classList.add("hidden");
@@ -197,6 +210,7 @@ document.querySelectorAll("[data-account-action]").forEach(button => {
     if (leavingAccount || authenticationBusy || (typeof saving !== "undefined" && saving)) return;
     leavingAccount = true;
     try {
+      closeProfileMenu();
       // Oculta imediatamente os dados, antes de encerrar a sessão.
       document.getElementById("mainContent").classList.add("hidden");
       document.getElementById("loginScreen").classList.remove("hidden");

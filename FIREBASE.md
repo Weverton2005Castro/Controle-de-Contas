@@ -49,3 +49,5 @@ A abertura aguarda `authStateReady()` e consulta o perfil. Mesmo com sessão lem
 A foto abre opções de conta; na ausência ou falha da imagem, exibe a inicial do nome. Alterar senha abre a página da conta Google correspondente, porque não existe senha própria do aplicativo. Trocar de conta e Sair encerram a sessão Firebase e recarregam a página para descartar dados em memória. Para trocar, clique em Entrar com Google e escolha outra conta no seletor. Sair do aplicativo não encerra a sessão global do Google no navegador. Mudanças da conta observadas em outra aba bloqueiam e recarregam a interface.
 
 As boas-vindas são escolhidas aleatoriamente a cada carregamento e personalizadas com o primeiro nome no painel. Nenhuma atualização das regras Firestore é necessária para estas mudanças.
+
+As ações de conta aparecem somente dentro do sistema: clique na foto do cabeçalho para abrir o modal com foto, nome e e-mail. Ele fecha pelo botão ×, Escape ou clique no fundo. Não há opções de sair ou trocar de conta na tela de entrada.

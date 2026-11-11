@@ -9,7 +9,7 @@ const source = fs.readFileSync(path.join(root, 'auth.js'), 'utf8')
 async function setup(ids = [], result = {}, support = true, loadError = false, restoredUser = null) {
   const calls = [], alerts = [];
   let initialized = false;
-  const elements = Object.fromEntries(['loginScreen', 'mainContent', 'btnBiometria', 'btnGoogle', 'loginStatus', 'welcomeLogin', 'lockedAccountActions', 'accountIdentity', 'profileName', 'profileEmail', 'profileInitial', 'profilePhoto', 'changePassword', 'welcomeMessage', 'btnProfile', 'profileMenu'].map(id => [id, {
+  const elements = Object.fromEntries(['loginScreen', 'mainContent', 'btnBiometria', 'btnGoogle', 'loginStatus', 'welcomeLogin', 'lockedAccountActions', 'accountIdentity', 'profileName', 'profileEmail', 'profileInitial', 'profilePhoto', 'changePassword', 'welcomeMessage', 'btnProfile', 'profileMenu', 'modalProfileInitial', 'modalProfilePhoto', 'btnCloseProfile'].map(id => [id, {
     classList: new Set(['mainContent', 'btnBiometria'].includes(id) ? ['hidden'] : []),
     setAttribute() {}, focus() {}, listeners: {}, addEventListener(type, fn) { this.listeners[type] = fn; }
   }]));
