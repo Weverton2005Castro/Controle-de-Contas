@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
-import { initializeAuth, inMemoryPersistence, GoogleAuthProvider, signInWithPopup, browserPopupRedirectResolver } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
+import { initializeAuth, indexedDBLocalPersistence, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, browserPopupRedirectResolver } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 import {
   initializeFirestore, memoryLocalCache, doc, collection, getDocFromServer,
   getDocsFromServer, setDoc, deleteDoc, writeBatch, arrayUnion
@@ -14,7 +14,7 @@ export const app = initializeApp({
   appId: "1:1062946478447:web:bca392f9e6b28b1365709a",
   measurementId: "G-86M56ZYFZR"
 });
-const auth = initializeAuth(app, { persistence: inMemoryPersistence });
+const auth = initializeAuth(app, { persistence: indexedDBLocalPersistence });
 const db = initializeFirestore(app, { localCache: memoryLocalCache() });
 // Analytics removido: não precisamos de armazenamento persistente de telemetria.
 const provider = new GoogleAuthProvider();
@@ -27,6 +27,12 @@ function userRef() {
 function online() {
   if (!navigator.onLine) throw new Error("Sem conexão. Conecte-se à internet para acessar o Firebase.");
 }
+export async function restoreSession() {
+  await auth.authStateReady();
+  return auth.currentUser;
+}
+export function watchSession(callback) { return onAuthStateChanged(auth, callback); }
+export async function signOutAccount() { await signOut(auth); }
 export async function signIn() {
   online();
   return (await signInWithPopup(auth, provider, browserPopupRedirectResolver)).user;

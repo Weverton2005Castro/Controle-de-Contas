@@ -16,14 +16,62 @@ const googleButton = document.getElementById("btnGoogle");
 const biometricButton = document.getElementById("btnBiometria");
 const loginStatus = document.getElementById("loginStatus");
 
+const welcomeMessages = [
+  "Que bom ter você por aqui! Vamos cuidar das suas finanças?",
+  "Um novo acesso, uma nova oportunidade de se organizar.",
+  "Seu futuro começa com as escolhas de hoje. Bem-vindo!",
+  "Tudo pronto para acompanhar seus planos e conquistas?",
+  "Vamos dar mais um passo rumo aos seus objetivos?",
+  "Sua vida financeira em dia começa por aqui. Bem-vindo!"
+];
+const welcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+document.getElementById("welcomeLogin").textContent = welcome;
+
+async function prepareAccount(user) {
+  biometricButton.disabled = true;
+  loginStatus.textContent = "Consultando seu perfil no Firebase…";
+  profile = await cloud.getProfile();
+  googleButton.classList.add("hidden");
+  biometricButton.classList.remove("hidden");
+  document.getElementById("lockedAccountActions").classList.remove("hidden");
+  document.getElementById("accountIdentity").textContent = user.email || "Conta conectada";
+  document.getElementById("profileName").textContent = user.displayName || "Minha conta";
+  document.getElementById("profileEmail").textContent = user.email || "";
+  document.getElementById("profileInitial").textContent = (user.displayName || user.email || "?").charAt(0).toUpperCase();
+  const photo = document.getElementById("profilePhoto");
+  if (user.photoURL) {
+    photo.src = user.photoURL;
+    photo.classList.remove("hidden");
+    document.getElementById("profileInitial").classList.add("hidden");
+  }
+  document.getElementById("changePassword").href = "https://myaccount.google.com/signinoptions/password?authuser=" + encodeURIComponent(user.email || "");
+  document.getElementById("welcomeMessage").textContent = `${user.displayName?.split(" ")[0] || "Olá"}, ${welcome}`;
+  loginStatus.textContent = profile.credentialIds?.length
+    ? "Confirme a entrada com o desbloqueio do dispositivo."
+    : "Cadastre o desbloqueio do dispositivo para continuar.";
+  biometricButton.disabled = false;
+}
 window.firebaseService = import("./firebase.js");
-window.firebaseService.then(service => {
+window.firebaseService.then(async service => {
   cloud = service;
-  googleButton.disabled = false;
+  const user = await cloud.restoreSession();
   googleButton.textContent = "Entrar com Google";
+  if (user) await prepareAccount(user);
+  googleButton.disabled = false;
+  let observedUid = user?.uid || null;
+  cloud.watchSession(current => {
+    const nextUid = current?.uid || null;
+    if (observedUid && observedUid !== nextUid && !leavingAccount) {
+      document.getElementById("mainContent").classList.add("hidden");
+      window.location.reload();
+    }
+    observedUid = nextUid;
+  });
 }).catch(error => {
   console.error("Erro ao carregar Firebase:", error);
-  loginStatus.textContent = "Não foi possível carregar o Firebase. Verifique a conexão e recarregue a página.";
+  googleButton.textContent = "Entrar com Google";
+  googleButton.disabled = !cloud;
+  loginStatus.textContent = "Não foi possível recuperar sua sessão. Verifique a conexão e tente entrar novamente.";
 });
 function mensagemErroFirebase(error) {
   const messages = {
@@ -42,14 +90,8 @@ googleButton.addEventListener("click", async () => {
   googleButton.disabled = true;
   loginStatus.textContent = "Conectando à sua conta Google…";
   try {
-    await cloud.signIn();
-    loginStatus.textContent = "Consultando seu perfil no Firebase…";
-    profile = await cloud.getProfile();
-    googleButton.classList.add("hidden");
-    biometricButton.classList.remove("hidden");
-    loginStatus.textContent = profile.credentialIds?.length
-      ? "Conta conectada. Confirme a entrada com o desbloqueio do dispositivo."
-      : "Conta conectada. Cadastre o desbloqueio do dispositivo para continuar.";
+    const user = await cloud.signIn();
+    await prepareAccount(user);
   } catch (error) {
     console.error("Erro ao conectar conta:", error);
     loginStatus.textContent = mensagemErroFirebase(error);
@@ -127,3 +169,44 @@ async function mostrarFormulario() {
 }
 
 document.getElementById("btnBiometria").addEventListener("click", loginBiometrico);
+
+const profileButton = document.getElementById("btnProfile");
+const profileMenu = document.getElementById("profileMenu");
+function closeProfileMenu() {
+  profileMenu.classList.add("hidden");
+  profileButton.setAttribute("aria-expanded", "false");
+}
+profileButton.addEventListener("click", () => {
+  const opening = profileMenu.classList.contains("hidden");
+  profileMenu.classList.toggle("hidden", !opening);
+  profileButton.setAttribute("aria-expanded", String(opening));
+});
+document.addEventListener("click", event => {
+  if (!event.target.closest(".profile-control")) closeProfileMenu();
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") { closeProfileMenu(); profileButton.focus(); }
+});
+document.getElementById("profilePhoto").addEventListener("error", () => {
+  document.getElementById("profilePhoto").classList.add("hidden");
+  document.getElementById("profileInitial").classList.remove("hidden");
+});
+let leavingAccount = false;
+document.querySelectorAll("[data-account-action]").forEach(button => {
+  button.addEventListener("click", async () => {
+    if (leavingAccount || authenticationBusy || (typeof saving !== "undefined" && saving)) return;
+    leavingAccount = true;
+    try {
+      // Oculta imediatamente os dados, antes de encerrar a sessão.
+      document.getElementById("mainContent").classList.add("hidden");
+      document.getElementById("loginScreen").classList.remove("hidden");
+      document.body.classList.add("login-pending");
+      await cloud.signOutAccount();
+      // Recarregar descarta transações e formulários em memória da conta anterior.
+      window.location.replace(window.location.pathname + window.location.search);
+    } catch (error) {
+      loginStatus.textContent = mensagemErroFirebase(error);
+      leavingAccount = false;
+    }
+  });
+});

@@ -1,6 +1,6 @@
 # Dados no Firebase
 
-O Firestore substitui a persistência local: `users/{uid}` guarda tema e IDs públicos WebAuthn; `users/{uid}/transactions/{id}` guarda cada transação. Não há leitura/gravação de localStorage no código do aplicativo nem fallback de dados locais. Auth e cache Firestore usam apenas memória. Analytics foi removido para não inicializar armazenamento de telemetria.
+O Firestore substitui a persistência local: `users/{uid}` guarda tema e IDs públicos WebAuthn; `users/{uid}/transactions/{id}` guarda cada transação. Não há leitura/gravação de localStorage no código do aplicativo nem fallback de dados locais. A sessão Auth persiste no IndexedDB; o cache Firestore usa apenas memória. Analytics foi removido para não inicializar armazenamento de telemetria.
 
 ## Ativação no projeto contas-d8193
 
@@ -14,7 +14,7 @@ Os arquivos de configuração e regras estão preparados, mas não foram publica
 
 ## Identidade e entrada
 
-A conta Google cria uma identidade Firebase estável para recuperar os mesmos dados em outro navegador/dispositivo. Recarregar exige nova entrada, pois a sessão fica em memória. Cookies e armazenamento da própria conta Google/provedor são controlados pelo provedor; não armazenamos os dados do aplicativo neles.
+A conta Google cria uma identidade Firebase estável para recuperar os mesmos dados em outro navegador/dispositivo. Recarregar restaura a conta Google salva e exige somente WebAuthn para abrir o painel. Cookies e armazenamento da própria conta Google/provedor são controlados pelo provedor; não armazenamos os dados do aplicativo neles.
 
 WebAuthn continua sendo uma etapa de desbloqueio local, sem verificação de assinatura no servidor. A autorização real do banco é a sessão Google com regras por UID; o Firestore não exige prova biométrica. O usuário WebAuthn agora corresponde ao UID/e-mail da conta, substituindo o usuário fixo anterior. Os IDs públicos ficam em uma lista no perfil remoto; a chave privada permanece no autenticador, como exigido por WebAuthn. Não pode ser enviada ao Firebase. Cadastro ocorre somente quando a lista está vazia; falha não apaga IDs nem recadastra automaticamente. Outro dispositivo precisa ter acesso à credencial correspondente. Não foi adicionada recuperação de credencial.
 
@@ -39,3 +39,13 @@ Referências: https://firebase.google.com/docs/auth/web/auth-state-persistence e
 Em 11/11/2026, o responsável confirmou a conclusão da ativação do Google, autorização dos domínios, criação do Firestore e publicação das regras. Não é necessário repetir essas etapas, salvo se a interface indicar erro de configuração.
 
 Para validar: abra via localhost ou HTTPS, entre com Google, conclua o WebAuthn e adicione uma transação de teste. Confira o documento em `users/{uid}/transactions` no console Firestore. Recarregue, entre com a mesma conta e confirme que a transação reaparece; teste editar e excluir. Esta validação depende da conta e do autenticador do responsável e não foi executada pelo agente. A interface distingue erros de popup, domínio, provedor desabilitado, conexão e regras.
+
+## Sessão e perfil
+
+A pedido do responsável, Firebase Auth agora usa `indexedDBLocalPersistence` para lembrar a conta neste navegador. Esta é uma adaptação à exigência anterior de manter todo estado apenas em memória: apenas a sessão de autenticação fica persistida no dispositivo, sem localStorage no aplicativo. Dados financeiros, tema e IDs WebAuthn continuam no Firestore. Após instalar esta atualização é necessário entrar uma vez com Google para criar a sessão persistente. Ela pode expirar, ser revogada ou ser apagada pelo navegador, exigindo nova entrada.
+
+A abertura aguarda `authStateReady()` e consulta o perfil. Mesmo com sessão lembrada, não carrega transações nem mostra o painel antes do WebAuthn. O login continua podendo usar PIN ou outro desbloqueio, conforme o autenticador; não garante digital exclusiva.
+
+A foto abre opções de conta; na ausência ou falha da imagem, exibe a inicial do nome. Alterar senha abre a página da conta Google correspondente, porque não existe senha própria do aplicativo. Trocar de conta e Sair encerram a sessão Firebase e recarregam a página para descartar dados em memória. Para trocar, clique em Entrar com Google e escolha outra conta no seletor. Sair do aplicativo não encerra a sessão global do Google no navegador. Mudanças da conta observadas em outra aba bloqueiam e recarregam a interface.
+
+As boas-vindas são escolhidas aleatoriamente a cada carregamento e personalizadas com o primeiro nome no painel. Nenhuma atualização das regras Firestore é necessária para estas mudanças.

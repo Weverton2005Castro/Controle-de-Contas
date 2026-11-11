@@ -702,3 +702,22 @@ body.login-pending {
 #loginScreen button:hover { background-color: #0056b3; }
 #loginScreen p { margin: 12px 0; font-size: 14px; }
 #loginScreen button:disabled { cursor: wait; opacity: .65; }
+/* Perfil e boas-vindas */
+.profile-control { position: relative; }
+.profile-button { border-radius: 50%; overflow: hidden; color: var(--primary); font-weight: 800; }
+.profile-button img { width: 100%; height: 100%; object-fit: cover; }
+.profile-menu {
+  position: absolute; right: 0; top: calc(100% + 10px); z-index: 110;
+  width: min(290px, calc(100vw - 32px)); padding: 16px;
+  background: var(--panel); color: var(--text); border: 1px solid var(--border);
+  border-radius: 14px; box-shadow: var(--shadow-lg); display: grid; gap: 10px;
+}
+.profile-menu span { color: var(--text-muted); font-size: 12px; overflow-wrap: anywhere; }
+.profile-menu button, .profile-menu a {
+  text-align: left; border: 0; border-radius: 8px; padding: 10px;
+  background: var(--panel-2); color: var(--text); font: inherit; font-size: 14px; text-decoration: none;
+}
+.profile-menu button:hover, .profile-menu a:hover { background: var(--primary-soft); }
+.welcome-panel { grid-column: 1 / -1; padding: 16px 20px; background: var(--primary-soft); border-radius: var(--radius); }
+.welcome-panel h2 { font-size: 16px; font-weight: 500; }
+.topbar-actions { flex-wrap: wrap; }

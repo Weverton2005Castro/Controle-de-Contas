@@ -10,8 +10,8 @@ function setup() {
   const state = { user: { uid: 'owner' }, reject: false };
   const ctx = vm.createContext({
     navigator: { onLine: true },
-    initializeApp: () => ({}), initializeAuth: () => ({ get currentUser() { return state.user; } }),
-    inMemoryPersistence: {}, memoryLocalCache: () => ({}), initializeFirestore: () => ({}),
+    initializeApp: () => ({}), initializeAuth: () => ({ async authStateReady() {}, get currentUser() { return state.user; } }),
+    indexedDBLocalPersistence: {}, signOut: async () => { state.user = null; }, onAuthStateChanged() {}, memoryLocalCache: () => ({}), initializeFirestore: () => ({}),
     GoogleAuthProvider: class { setCustomParameters() {} }, browserPopupRedirectResolver: {},
     signInWithPopup: async () => ({ user: state.user }),
     doc: (...args) => args.filter(x => typeof x === 'string').join('/'),
@@ -59,4 +59,12 @@ test('importar e limpar são atômicos e limite é verificado antes do commit', 
   s.state.reject = true;
   await assert.rejects(s.ctx.clearTransactions(['a']), /denied/);
   assert.equal(s.calls.length, 2);
+});
+
+test('restaura sessão existente e logout remove acesso à conta', async () => {
+  const s = setup();
+  assert.equal((await s.ctx.restoreSession()).uid, 'owner');
+  await s.ctx.signOutAccount();
+  assert.equal(await s.ctx.restoreSession(), null);
+  await assert.rejects(s.ctx.listTransactions(), /Entre com sua conta/);
 });

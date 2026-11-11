@@ -6,19 +6,23 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'auth.js'), 'utf8')
   .replace('import("./firebase.js")', 'Promise.resolve(mockCloud)');
-async function setup(ids = [], result = {}, support = true, loadError = false) {
+async function setup(ids = [], result = {}, support = true, loadError = false, restoredUser = null) {
   const calls = [], alerts = [];
   let initialized = false;
-  const elements = Object.fromEntries(['loginScreen', 'mainContent', 'btnBiometria', 'btnGoogle', 'loginStatus'].map(id => [id, {
+  const elements = Object.fromEntries(['loginScreen', 'mainContent', 'btnBiometria', 'btnGoogle', 'loginStatus', 'welcomeLogin', 'lockedAccountActions', 'accountIdentity', 'profileName', 'profileEmail', 'profileInitial', 'profilePhoto', 'changePassword', 'welcomeMessage', 'btnProfile', 'profileMenu'].map(id => [id, {
     classList: new Set(['mainContent', 'btnBiometria'].includes(id) ? ['hidden'] : []),
-    listeners: {}, addEventListener(type, fn) { this.listeners[type] = fn; }
+    setAttribute() {}, focus() {}, listeners: {}, addEventListener(type, fn) { this.listeners[type] = fn; }
   }]));
-  for (const el of Object.values(elements)) el.classList.remove = el.classList.delete;
+  for (const el of Object.values(elements)) {
+    el.classList.remove = el.classList.delete;
+    el.classList.contains = el.classList.has;
+  }
   const profile = { credentialIds: [...ids] };
   const context = vm.createContext({ Uint8Array, btoa, atob, TextEncoder,
     window: { PublicKeyCredential: support ? function() {} : undefined },
     mockCloud: {
-      async signIn() { calls.push({ method: 'signIn' }); },
+      async signIn() { calls.push({ method: 'signIn' }); return { uid: 'account-123', email: 'user@example.com' }; },
+      async restoreSession() { return restoredUser; }, watchSession() {},
       currentUser: () => ({ uid: 'account-123', email: 'user@example.com' }),
       async getProfile() { return profile; },
       async saveCredential(id) { calls.push({ method: 'saveCredential' }); profile.credentialIds.push(id); }
@@ -28,10 +32,10 @@ async function setup(ids = [], result = {}, support = true, loadError = false) {
     }])) },
     alert: msg => alerts.push(msg), console: { error() {} },
     inicializarAplicacao: async () => { if (loadError) throw Error('Firestore denied'); initialized = true; },
-    document: { getElementById: id => elements[id], body: { classList: { remove() {} } } }
+    document: { addEventListener() {}, querySelectorAll: () => [], getElementById: id => elements[id], body: { classList: { remove() {} } } }
   });
   vm.runInContext(source, context);
-  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
   return { context, profile, calls, alerts, initialized: () => initialized, elements,
     signIn: () => elements.btnGoogle.listeners.click(),
     unlocked: () => !elements.mainContent.classList.has('hidden') };
@@ -100,4 +104,16 @@ test('erros de configuração e popup recebem orientação específica', async (
     ['auth/operation-not-allowed', 'não está habilitado']
   ]) assert.ok(s.context.mensagemErroFirebase({ code }).includes(text));
   assert.ok(s.context.mensagemErroFirebase({ code: 'unknown' }).includes('console'));
+});
+
+test('sessão restaurada exige apenas WebAuthn e não abre painel automaticamente', async () => {
+  const s = await setup(['AP+A'], {}, true, false, { uid: 'account-123', email: 'user@example.com', displayName: 'Maria Silva' });
+  assert.equal(s.calls.length, 0);
+  assert.equal(s.elements.btnGoogle.classList.has('hidden'), true);
+  assert.equal(s.elements.btnBiometria.classList.has('hidden'), false);
+  assert.equal(s.unlocked(), false);
+  assert.equal(s.elements.profileName.textContent, 'Maria Silva');
+  await s.context.loginBiometrico();
+  assert.equal(s.unlocked(), true);
+  assert.equal(s.calls.some(c => c.method === 'signIn'), false);
 });
